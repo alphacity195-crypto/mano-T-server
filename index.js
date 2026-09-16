@@ -7,10 +7,6 @@ require("dotenv").config();
 
 const app = express();
 
-// ============================
-// CONFIGURAÇÕES
-// ============================
-
 app.use(cors());
 app.use(express.json());
 
@@ -36,21 +32,21 @@ if (fs.existsSync(arquivoMemoria)) {
             fs.readFileSync(arquivoMemoria, "utf8")
         );
 
-        console.log("🧠 Memória carregada!");
+        console.log("Memoria carregada!");
     } catch (erro) {
-        console.log("⚠️ Não foi possível carregar a memória.");
+        console.log("Nao foi possivel carregar a memoria.");
         historico = [];
     }
 }
 
 // ============================
-// PÁGINA INICIAL
+// PAGINA INICIAL
 // ============================
 
 app.get("/", (req, res) => {
     res.json({
         status: "online",
-        message: "Mano T está vivo 🤖"
+        message: "Mano T esta vivo"
     });
 });
 
@@ -76,27 +72,24 @@ app.post("/chat", async (req, res) => {
 
         if (!mensagem || typeof mensagem !== "string") {
             return res.status(400).json({
-                erro: "Mensagem não enviada"
+                erro: "Mensagem nao enviada"
             });
         }
 
-        // Guarda a mensagem do usuário
         historico.push({
             role: "user",
             content: mensagem
         });
 
-        // Usa apenas as últimas 30 mensagens como contexto
         const contexto = historico.slice(-30);
 
-        // Envia para a OpenAI
         const resposta = await openai.responses.create({
             model: "gpt-5.6-luna",
 
             instructions:
-                "Você é o Mano T, uma IA pessoal amigável, natural e prestativa. " +
-                "Responda sempre em português do Brasil. " +
-                "Use o histórico da conversa para manter o contexto. " +
+                "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
+                "Responda sempre em portugues do Brasil. " +
+                "Use o historico da conversa para manter o contexto. " +
                 "Seja natural, direto e parceiro.",
 
             input: contexto
@@ -104,13 +97,11 @@ app.post("/chat", async (req, res) => {
 
         const textoResposta = resposta.output_text;
 
-        // Guarda a resposta do Mano T
         historico.push({
             role: "assistant",
             content: textoResposta
         });
 
-        // Salva a memória
         try {
             fs.writeFileSync(
                 arquivoMemoria,
@@ -119,18 +110,17 @@ app.post("/chat", async (req, res) => {
             );
         } catch (erroMemoria) {
             console.log(
-                "⚠️ Não foi possível salvar a memória:",
+                "Nao foi possivel salvar a memoria:",
                 erroMemoria.message
             );
         }
 
-        // Envia resposta para o usuário
         res.json({
             resposta: textoResposta
         });
 
     } catch (erro) {
-        console.error("❌ Erro no chat:", erro);
+        console.error("Erro no chat:", erro);
 
         res.status(500).json({
             erro: "O Mano T teve um problema ao pensar."
@@ -139,12 +129,12 @@ app.post("/chat", async (req, res) => {
 });
 
 // ============================
-// ROTA NÃO ENCONTRADA
+// ROTA NAO ENCONTRADA
 // ============================
 
 app.use((req, res) => {
     res.status(404).json({
-        erro: "Rota não encontrada",
+        erro: "Rota nao encontrada",
         caminho: req.path
     });
 });
@@ -156,6 +146,6 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🤖 Mano T está rodando na porta ${PORT}!`);
+    console.log("Mano T esta rodando na porta " + PORT + "!");
 });
 ```
