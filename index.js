@@ -1,4 +1,3 @@
-```js
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
@@ -10,17 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ============================
-// OPENAI
-// ============================
-
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
-
-// ============================
-// MEMÓRIA
-// ============================
 
 const arquivoMemoria = "memoria.json";
 
@@ -31,17 +22,12 @@ if (fs.existsSync(arquivoMemoria)) {
         historico = JSON.parse(
             fs.readFileSync(arquivoMemoria, "utf8")
         );
-
         console.log("Memoria carregada!");
     } catch (erro) {
         console.log("Nao foi possivel carregar a memoria.");
         historico = [];
     }
 }
-
-// ============================
-// PAGINA INICIAL
-// ============================
 
 app.get("/", (req, res) => {
     res.json({
@@ -50,10 +36,6 @@ app.get("/", (req, res) => {
     });
 });
 
-// ============================
-// HEALTH CHECK
-// ============================
-
 app.get("/health", (req, res) => {
     res.json({
         status: "ok",
@@ -61,10 +43,6 @@ app.get("/health", (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
-
-// ============================
-// CHAT
-// ============================
 
 app.post("/chat", async (req, res) => {
     try {
@@ -85,13 +63,11 @@ app.post("/chat", async (req, res) => {
 
         const resposta = await openai.responses.create({
             model: "gpt-5.6-luna",
-
             instructions:
                 "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
                 "Responda sempre em portugues do Brasil. " +
                 "Use o historico da conversa para manter o contexto. " +
                 "Seja natural, direto e parceiro.",
-
             input: contexto
         });
 
@@ -128,10 +104,6 @@ app.post("/chat", async (req, res) => {
     }
 });
 
-// ============================
-// ROTA NAO ENCONTRADA
-// ============================
-
 app.use((req, res) => {
     res.status(404).json({
         erro: "Rota nao encontrada",
@@ -139,13 +111,8 @@ app.use((req, res) => {
     });
 });
 
-// ============================
-// INICIAR SERVIDOR
-// ============================
-
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
     console.log("Mano T esta rodando na porta " + PORT + "!");
 });
-```
