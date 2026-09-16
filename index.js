@@ -1,3 +1,4 @@
+```js
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
@@ -5,6 +6,11 @@ const fs = require("fs");
 require("dotenv").config();
 
 const app = express();
+
+// ============================
+// CONFIGURAÇÕES
+// ============================
+
 app.use(cors());
 app.use(express.json());
 
@@ -80,9 +86,10 @@ app.post("/chat", async (req, res) => {
             content: mensagem
         });
 
-        // Limita o histórico para evitar crescimento infinito
+        // Usa apenas as últimas 30 mensagens como contexto
         const contexto = historico.slice(-30);
 
+        // Envia para a OpenAI
         const resposta = await openai.responses.create({
             model: "gpt-5.6-luna",
 
@@ -111,9 +118,13 @@ app.post("/chat", async (req, res) => {
                 "utf8"
             );
         } catch (erroMemoria) {
-            console.log("⚠️ Não foi possível salvar a memória.");
+            console.log(
+                "⚠️ Não foi possível salvar a memória:",
+                erroMemoria.message
+            );
         }
 
+        // Envia resposta para o usuário
         res.json({
             resposta: textoResposta
         });
@@ -147,3 +158,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`🤖 Mano T está rodando na porta ${PORT}!`);
 });
+```
