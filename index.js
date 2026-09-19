@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
 const fs = require("fs");
+const https = require("https");
+
 require("dotenv").config();
 
 const app = express();
@@ -30,12 +32,22 @@ if (fs.existsSync(arquivoMemoria)) {
     }
 }
 
+
+// =========================================================
+// ROTA PRINCIPAL
+// =========================================================
+
 app.get("/", (req, res) => {
     res.json({
         status: "online",
         message: "Mano T esta vivo"
     });
 });
+
+
+// =========================================================
+// HEALTH
+// =========================================================
 
 app.get("/health", (req, res) => {
     res.json({
@@ -46,11 +58,9 @@ app.get("/health", (req, res) => {
 });
 
 
-/*
-=========================================================
-CHAT NORMAL
-=========================================================
-*/
+// =========================================================
+// CHAT NORMAL
+// =========================================================
 
 app.post("/chat", async (req, res) => {
 
@@ -70,25 +80,22 @@ app.post("/chat", async (req, res) => {
             content: mensagem
         });
 
-        const contexto =
-            historico.slice(-30);
+        const contexto = historico.slice(-30);
 
-        const resposta =
-            await openai.responses.create({
+        const resposta = await openai.responses.create({
 
-                model: "gpt-5.6-luna",
+            model: "gpt-5.6-luna",
 
-                instructions:
-                    "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
-                    "Responda sempre em portugues do Brasil. " +
-                    "Use o historico da conversa para manter o contexto. " +
-                    "Seja natural, direto e parceiro.",
+            instructions:
+                "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
+                "Responda sempre em portugues do Brasil. " +
+                "Use o historico da conversa para manter o contexto. " +
+                "Seja natural, direto e parceiro.",
 
-                input: contexto
-            });
+            input: contexto
+        });
 
-        const textoResposta =
-            resposta.output_text;
+        const textoResposta = resposta.output_text;
 
         historico.push({
             role: "assistant",
@@ -134,118 +141,198 @@ app.post("/chat", async (req, res) => {
 });
 
 
-/*
-=========================================================
-SESSAO REALTIME
-=========================================================
-*/
+// =========================================================
+// REALTIME - CRIAR SESSAO TEMPORARIA
+// =========================================================
 
-app.post(
-    "/realtime/session",
-    async (req, res) => {
+app.post("/realtime/session", async (req, res) => {
 
-        try {
+    try {
 
-            /*
-             * A chave secreta permanece SOMENTE
-             * no Render.
-             */
+        console.log(
+            "Solicitacao de nova sessao Realtime..."
+        );
 
-            const resposta =
-                await fetch(
-                    "https://api.openai.com/v1/realtime/client_secrets",
-                    {
-                        method: "POST",
+        const dadosSessao = JSON.stringify({
 
-                        headers: {
-                            "Authorization":
-                                `Bearer ${process.env.OPENAI_API_KEY}`,
+            session: {
 
-                            "Content-Type":
-                                "application/json"
-                        },
+                type: "realtime",
 
-                        body: JSON.stringify({
+                model: "gpt-realtime-2.1",
 
-                            session: {
+                instructions:
+                    "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
+                    "Fale sempre em portugues do Brasil. " +
+                    "Converse de maneira natural, como uma ligacao telefonica. " +
+                    "Seja direto, espontaneo e parceiro. " +
+                    "Nao fique repetindo frases desnecessarias. " +
+                    "Responda por voz de forma natural.",
 
-                                type:
-                                    "realtime",
+                audio: {
 
-                                model:
-                                    "gpt-realtime-2.1",
+                    output: {
 
-                                audio: {
-
-                                    output: {
-
-                                        voice:
-                                            "marin"
-                                    }
-                                },
-
-                                instructions:
-                                    "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
-                                    "Fale sempre em portugues do Brasil. " +
-                                    "Seja natural, direto e parceiro. " +
-                                    "Converse como uma pessoa falando ao telefone. " +
-                                    "Nao diga que e uma inteligencia artificial a menos que perguntem. " +
-                                    "Responda de forma natural e sem textos longos quando estiver falando."
-                            }
-                        })
+                        voice: "marin"
                     }
-                );
+                }
+            }
+        });
 
-            if (!resposta.ok) {
+        const opcoes = {
 
-                const erro =
-                    await resposta.text();
+            hostname:
+                "api.openai.com",
+
+            path:
+                "/v1/realtime/client_secrets",
+
+            method:
+                "POST",
+
+            headers: {
+
+                "Authorization":
+                    "Bearer " +
+                    process.env.OPENAI_API_KEY,
+
+                "Content-Type":
+                    "application/json",
+
+                "Content-Length":
+                    Buffer.byteLength(dadosSessao)
+            }
+        };
+
+
+        const requisicao =
+            https.request(
+                opcoes,
+                (respostaOpenAI) => {
+
+                    let dados = "";
+
+                    respostaOpenAI.on(
+                        "data",
+                        (parte) => {
+                            dados += parte;
+                        }
+                    );
+
+                    respostaOpenAI.on(
+                        "end",
+                        () => {
+
+                            console.log(
+                                "OpenAI respondeu:",
+                                respostaOpenAI.statusCode
+                            );
+
+                            if (
+                                respostaOpenAI.statusCode < 200 ||
+                                respostaOpenAI.statusCode >= 300
+                            ) {
+
+                                console.error(
+                                    "Erro OpenAI:",
+                                    dados
+                                );
+
+                                return res
+                                    .status(
+                                        respostaOpenAI.statusCode
+                                    )
+                                    .json({
+
+                                        erro:
+                                            "OpenAI recusou a sessao Realtime.",
+
+                                        detalhe:
+                                            dados
+                                    });
+                            }
+
+                            try {
+
+                                const resultado =
+                                    JSON.parse(dados);
+
+                                res.json(resultado);
+
+                            } catch (erro) {
+
+                                console.error(
+                                    "Resposta invalida da OpenAI:",
+                                    dados
+                                );
+
+                                res.status(500).json({
+
+                                    erro:
+                                        "Resposta invalida da OpenAI.",
+
+                                    detalhe:
+                                        dados
+                                });
+                            }
+                        }
+                    );
+                }
+            );
+
+
+        requisicao.on(
+            "error",
+            (erro) => {
 
                 console.error(
-                    "Erro ao criar sessao Realtime:",
+                    "Erro na conexao com OpenAI:",
                     erro
                 );
 
-                return res.status(
-                    resposta.status
-                ).json({
-                    erro:
-                        "Nao foi possivel iniciar a conversa de voz.",
-                    detalhe: erro
-                });
+                if (!res.headersSent) {
+
+                    res.status(500).json({
+
+                        erro:
+                            "Nao foi possivel conectar a OpenAI.",
+
+                        detalhe:
+                            erro.message
+                    });
+                }
             }
+        );
 
-            const dados =
-                await resposta.json();
 
-            /*
-             * Retornamos somente os dados necessários
-             * para o Android estabelecer a conexão.
-             */
+        requisicao.write(
+            dadosSessao
+        );
 
-            res.json(dados);
+        requisicao.end();
 
-        } catch (erro) {
+    } catch (erro) {
 
-            console.error(
-                "Erro no Realtime:",
-                erro
-            );
+        console.error(
+            "Erro ao criar sessao Realtime:",
+            erro
+        );
 
-            res.status(500).json({
-                erro:
-                    "Erro ao iniciar o modo chamada."
-            });
-        }
+        res.status(500).json({
+
+            erro:
+                "Erro ao iniciar o modo chamada.",
+
+            detalhe:
+                erro.message
+        });
     }
-);
+});
 
 
-/*
-=========================================================
-404
-=========================================================
-*/
+// =========================================================
+// 404
+// =========================================================
 
 app.use((req, res) => {
 
@@ -260,11 +347,9 @@ app.use((req, res) => {
 });
 
 
-/*
-=========================================================
-SERVIDOR
-=========================================================
-*/
+// =========================================================
+// SERVIDOR
+// =========================================================
 
 const PORT =
     process.env.PORT || 3000;
