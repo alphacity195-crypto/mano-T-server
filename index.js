@@ -60,6 +60,41 @@ const mensagem = req.body.mensagem;
 
 });
 
+app.post("/tts", async (req, res) => {
+try {
+const texto = req.body.texto;
+
+
+    if (!texto || typeof texto !== "string") {
+        return res.status(400).json({
+            erro: "Texto nao enviado"
+        });
+    }
+
+    const audio = await openai.audio.speech.create({
+        model: "gpt-4o-mini-tts",
+        voice: "marin",
+        input: texto,
+        response_format: "mp3"
+    });
+
+    const buffer = Buffer.from(await audio.arrayBuffer());
+
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Content-Length", buffer.length);
+
+    res.send(buffer);
+} catch (erro) {
+    console.error("Erro no TTS:", erro);
+
+    res.status(500).json({
+        erro: "Nao foi possivel gerar a voz do Mano T."
+    });
+}
+
+
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
