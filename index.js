@@ -29,7 +29,8 @@ service: "Mano T"
 
 app.post("/chat", async (req, res) => {
 try {
-const mensagem = req.body.mensagem;
+
+    const mensagem = req.body.mensagem;
 
     if (!mensagem || typeof mensagem !== "string") {
         return res.status(400).json({
@@ -37,27 +38,24 @@ const mensagem = req.body.mensagem;
         });
     }
 
-  const resposta = await openai.responses.create({
-model: "gpt-5.6-luna",
+    const resposta = await openai.responses.create({
+        model: "gpt-5.6-luna",
 
-instructions:
-    "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
-    "Responda sempre em portugues do Brasil. " +
-    "Seja natural, direto e parceiro. " +
-    "Quando a pergunta depender de informacoes atuais, noticias, " +
-    "precos, acontecimentos recentes ou outros dados que possam " +
-    "ter mudado, pesquise na internet antes de responder.",
+        instructions:
+            "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
+            "Responda sempre em portugues do Brasil. " +
+            "Seja natural, direto e parceiro. " +
+            "Quando a pergunta depender de informacoes atuais, noticias, " +
+            "precos, acontecimentos recentes ou outros dados que possam " +
+            "ter mudado, pesquise na internet antes de responder.",
 
-tools: [
-    {
-        type: "web_search"
-    }
-],
+        tools: [
+            {
+                type: "web_search"
+            }
+        ],
 
-input: mensagem
-
-});
-
+        input: mensagem
     });
 
     res.json({
@@ -77,7 +75,8 @@ input: mensagem
 
 app.post("/tts", async (req, res) => {
 try {
-const texto = req.body.texto;
+
+    const texto = req.body.texto;
 
     if (!texto || typeof texto !== "string") {
         return res.status(400).json({
