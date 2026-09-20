@@ -31,6 +31,7 @@ app.post("/chat", async (req, res) => {
 try {
 const mensagem = req.body.mensagem;
 
+    
     if (!mensagem || typeof mensagem !== "string") {
         return res.status(400).json({
             erro: "Mensagem nao enviada"
@@ -114,18 +115,23 @@ try {
                 type: "realtime",
                 model: "gpt-realtime-2.1",
                 audio: {
+                    input: {
+                        transcription: {
+                            model: "gpt-4o-mini-transcribe",
+                            language: "pt"
+                        }
+                    },
                     output: {
                         voice: "marin"
                     }
                 }
             }
-        }); 
-    
-res.json({
-value: sessao.value
-});
+        });
 
-   
+    res.json({
+        value: sessao.value
+    });
+
 } catch (erro) {
 
     console.error(
