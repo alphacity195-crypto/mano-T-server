@@ -31,7 +31,6 @@ app.post("/chat", async (req, res) => {
 try {
 const mensagem = req.body.mensagem;
 
-    
     if (!mensagem || typeof mensagem !== "string") {
         return res.status(400).json({
             erro: "Mensagem nao enviada"
@@ -74,7 +73,7 @@ const texto = req.body.texto;
 
     const audio = await openai.audio.speech.create({
         model: "gpt-4o-mini-tts",
-        voice: "marin",
+        voice: "cedar",
         input: texto,
         response_format: "mp3"
     });
@@ -114,6 +113,13 @@ try {
             session: {
                 type: "realtime",
                 model: "gpt-realtime-2.1",
+
+                instructions:
+                    "Voce e o Mano T, uma IA pessoal amigavel, natural e parceira. " +
+                    "Fale sempre em portugues do Brasil, com pronuncia e entonacao naturais do portugues brasileiro. " +
+                    "Nao responda em ingles ou outro idioma, a menos que o usuario peca explicitamente. " +
+                    "Mantenha uma conversa natural, descontraida e direta, como um parceiro brasileiro conversando com o usuario.",
+
                 audio: {
                     input: {
                         transcription: {
@@ -121,8 +127,9 @@ try {
                             language: "pt"
                         }
                     },
+
                     output: {
-                        voice: "marin"
+                        voice: "cedar"
                     }
                 }
             }
