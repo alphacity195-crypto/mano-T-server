@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
@@ -66,13 +65,11 @@ app.post("/chat", async (req, res) => {
 
         const resposta = await openai.responses.create({
             model: "gpt-5.6-luna",
-
             instructions:
                 "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
                 "Responda sempre em portugues do Brasil. " +
                 "Use o historico da conversa para manter o contexto. " +
                 "Seja natural, direto e parceiro.",
-
             input: contexto
         });
 
@@ -86,11 +83,7 @@ app.post("/chat", async (req, res) => {
         try {
             fs.writeFileSync(
                 arquivoMemoria,
-                JSON.stringify(
-                    historico,
-                    null,
-                    2
-                ),
+                JSON.stringify(historico, null, 2),
                 "utf8"
             );
         } catch (erroMemoria) {
@@ -105,14 +98,10 @@ app.post("/chat", async (req, res) => {
         });
 
     } catch (erro) {
-        console.error(
-            "Erro no chat:",
-            erro
-        );
+        console.error("Erro no chat:", erro);
 
         res.status(500).json({
-            erro:
-                "O Mano T teve um problema ao pensar."
+            erro: "O Mano T teve um problema ao pensar."
         });
     }
 });
@@ -127,20 +116,16 @@ app.post("/realtime/session", async (req, res) => {
             "https://api.openai.com/v1/realtime/client_secrets",
             {
                 method: "POST",
-
                 headers: {
                     "Authorization":
                         "Bearer " +
                         process.env.OPENAI_API_KEY,
-
                     "Content-Type":
                         "application/json"
                 },
-
                 body: JSON.stringify({
                     session: {
                         type: "realtime",
-
                         model: "gpt-realtime-2.1",
 
                         instructions:
@@ -154,11 +139,9 @@ app.post("/realtime/session", async (req, res) => {
                         audio: {
                             input: {
                                 transcription: {
-                                    model:
-                                        "gpt-4o-transcribe"
+                                    model: "gpt-4o-transcribe"
                                 }
                             },
-
                             output: {
                                 voice: "marin"
                             }
@@ -168,8 +151,7 @@ app.post("/realtime/session", async (req, res) => {
             }
         );
 
-        const dados =
-            await resposta.json();
+        const dados = await resposta.json();
 
         console.log(
             "OpenAI respondeu:",
@@ -187,7 +169,6 @@ app.post("/realtime/session", async (req, res) => {
                 .json({
                     erro:
                         "OpenAI recusou a sessao Realtime.",
-
                     detalhe:
                         dados
                 });
@@ -204,7 +185,6 @@ app.post("/realtime/session", async (req, res) => {
         res.status(500).json({
             erro:
                 "Erro ao iniciar o modo chamada.",
-
             detalhe:
                 erro.message
         });
@@ -213,11 +193,8 @@ app.post("/realtime/session", async (req, res) => {
 
 app.use((req, res) => {
     res.status(404).json({
-        erro:
-            "Rota nao encontrada",
-
-        caminho:
-            req.path
+        erro: "Rota nao encontrada",
+        caminho: req.path
     });
 });
 
@@ -235,4 +212,3 @@ app.listen(
         );
     }
 );
-```
