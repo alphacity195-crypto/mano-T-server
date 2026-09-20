@@ -39,27 +39,30 @@ try {
     }
 
     const resposta = await openai.responses.create({
+
         model: "gpt-5.6-luna",
 
         instructions:
             "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
             "Responda sempre em portugues do Brasil. " +
             "Seja natural, direto e parceiro. " +
-            "Quando a pergunta depender de informacoes atuais, noticias, " +
-            "previsao do tempo, cotacoes, precos, acontecimentos recentes " +
-            "ou qualquer informacao que possa ter mudado, use a busca na " +
-            "internet antes de responder. " +
-            "Nunca diga que nao consegue acessar informacoes em tempo real " +
-            "se a busca na internet estiver disponivel. " +
-            "Quando usar informacoes encontradas na internet, responda " +
-            "normalmente e deixe claro quando a informacao for uma previsao " +
-            "ou puder mudar.",
+            "Voce possui acesso a pesquisa na internet por meio da ferramenta web_search. " +
+            "Use obrigatoriamente essa ferramenta para obter informacoes atuais. " +
+            "Isso inclui previsao do tempo, noticias, cotacoes, precos, transito, " +
+            "resultados, acontecimentos recentes e qualquer informacao que possa ter mudado. " +
+            "Nao diga que nao possui acesso a internet quando a ferramenta estiver disponivel. " +
+            "Depois de pesquisar, responda ao usuario de forma natural em portugues do Brasil. " +
+            "Nao invente informacoes atuais. " +
+            "Se a pesquisa nao encontrar uma resposta confiavel, diga isso claramente.",
 
         tools: [
             {
-                type: "web_search"
+                type: "web_search",
+                external_web_access: true
             }
         ],
+
+        tool_choice: "required",
 
         input: mensagem
     });
@@ -70,10 +73,13 @@ try {
 
 } catch (erro) {
 
-    console.error("Erro no chat:", erro);
+    console.error(
+        "Erro no chat:",
+        erro
+    );
 
     res.status(500).json({
-        erro: "O Mano T teve um problema ao pensar."
+        erro: "O Mano T teve um problema ao pesquisar e pensar."
     });
 }
 
@@ -115,7 +121,10 @@ try {
 
 } catch (erro) {
 
-    console.error("Erro no TTS:", erro);
+    console.error(
+        "Erro no TTS:",
+        erro
+    );
 
     res.status(500).json({
         erro: "Nao foi possivel gerar a voz do Mano T."
@@ -129,8 +138,11 @@ try {
 
     const sessao =
         await openai.realtime.clientSecrets.create({
+
             session: {
+
                 type: "realtime",
+
                 model: "gpt-realtime-2.1",
 
                 instructions:
@@ -140,7 +152,9 @@ try {
                     "Mantenha uma conversa natural, descontraida e direta, como um parceiro brasileiro conversando com o usuario.",
 
                 audio: {
+
                     input: {
+
                         transcription: {
                             model: "gpt-4o-mini-transcribe",
                             language: "pt"
@@ -182,10 +196,12 @@ app.listen(
 PORT,
 "0.0.0.0",
 () => {
-console.log(
-"Mano T esta rodando na porta " +
-PORT +
-"!"
-);
+
+    console.log(
+        "Mano T esta rodando na porta " +
+        PORT +
+        "!"
+    );
 }
+
 );
