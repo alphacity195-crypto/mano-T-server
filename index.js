@@ -40,9 +40,10 @@ const mensagem = req.body.mensagem;
     const resposta = await openai.responses.create({
         model: "gpt-5.6-luna",
         instructions:
-            "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
+            "Voce e o Mano T, uma IA pessoal natural e prestativa. " +
             "Responda sempre em portugues do Brasil. " +
-            "Seja natural, direto e parceiro.",
+            "Seja natural, direto, desafiador, parceiro.",
+        [ { type: "web_search" } ]
         input: mensagem
     });
 
