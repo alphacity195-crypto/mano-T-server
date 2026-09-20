@@ -31,7 +31,7 @@ app.post("/chat", async (req, res) => {
 try {
 const mensagem = req.body.mensagem;
 
-```
+
     if (!mensagem || typeof mensagem !== "string") {
         return res.status(400).json({
             erro: "Mensagem nao enviada"
@@ -40,8 +40,7 @@ const mensagem = req.body.mensagem;
 
     const resposta = await openai.responses.create({
         model: "gpt-5.6-luna",
-        instructions:
-            "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
+        instructions: "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
             "Responda sempre em portugues do Brasil. " +
             "Seja natural, direto e parceiro.",
         input: mensagem
@@ -50,7 +49,6 @@ const mensagem = req.body.mensagem;
     res.json({
         resposta: resposta.output_text
     });
-
 } catch (erro) {
     console.error("Erro no chat:", erro);
 
@@ -58,20 +56,12 @@ const mensagem = req.body.mensagem;
         erro: "O Mano T teve um problema ao pensar."
     });
 }
-```
+
 
 });
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(
-PORT,
-"0.0.0.0",
-() => {
-console.log(
-"Mano T esta rodando na porta " +
-PORT +
-"!"
-);
-}
-);
+app.listen(PORT, "0.0.0.0", () => {
+console.log("Mano T esta rodando na porta " + PORT + "!");
+});
