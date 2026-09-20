@@ -160,7 +160,7 @@ app.post("/realtime/session", async (req, res) => {
 
                 headers: {
                     "Authorization":
-                        Bearer ${process.env.OPENAI_API_KEY}`,
+                        `Bearer ${process.env.OPENAI_API_KEY}`,
 
                     "Content-Type":
                         "application/json"
@@ -190,7 +190,6 @@ app.post("/realtime/session", async (req, res) => {
 
                                     model: "gpt-4o-transcribe"
                                 }
-
                             },
 
                             output: {
@@ -203,7 +202,8 @@ app.post("/realtime/session", async (req, res) => {
             }
         );
 
-        const dados = await resposta.json();
+        const dados =
+            await resposta.json();
 
         console.log(
             "OpenAI respondeu:",
@@ -220,6 +220,7 @@ app.post("/realtime/session", async (req, res) => {
             return res
                 .status(resposta.status)
                 .json({
+
                     erro:
                         "OpenAI recusou a sessao Realtime.",
 
