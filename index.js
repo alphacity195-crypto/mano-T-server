@@ -119,10 +119,13 @@ try {
                     }
                 }
             }
-        });
+        }); 
+    
+res.json({
+value: sessao.value
+});
 
-    res.json(sessao.value);
-
+   
 } catch (erro) {
 
     console.error(
