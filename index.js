@@ -13,9 +13,9 @@ const openai = new OpenAI({
 apiKey: process.env.OPENAI_API_KEY
 });
 
-# /*
+ /*
 
-# CENTRAL DE FERRAMENTAS DO MANO T
+ CENTRAL DE FERRAMENTAS DO MANO T
 
 Ferramentas atuais:
 
