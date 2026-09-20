@@ -32,22 +32,12 @@ if (fs.existsSync(arquivoMemoria)) {
     }
 }
 
-
-// =========================================================
-// ROTA PRINCIPAL
-// =========================================================
-
 app.get("/", (req, res) => {
     res.json({
         status: "online",
         message: "Mano T esta vivo"
     });
 });
-
-
-// =========================================================
-// HEALTH
-// =========================================================
 
 app.get("/health", (req, res) => {
     res.json({
@@ -57,15 +47,8 @@ app.get("/health", (req, res) => {
     });
 });
 
-
-// =========================================================
-// CHAT NORMAL
-// =========================================================
-
 app.post("/chat", async (req, res) => {
-
     try {
-
         const mensagem = req.body.mensagem;
 
         if (!mensagem || typeof mensagem !== "string") {
@@ -82,7 +65,6 @@ app.post("/chat", async (req, res) => {
         const contexto = historico.slice(-30);
 
         const resposta = await openai.responses.create({
-
             model: "gpt-5.6-luna",
 
             instructions:
@@ -102,7 +84,6 @@ app.post("/chat", async (req, res) => {
         });
 
         try {
-
             fs.writeFileSync(
                 arquivoMemoria,
                 JSON.stringify(
@@ -112,9 +93,7 @@ app.post("/chat", async (req, res) => {
                 ),
                 "utf8"
             );
-
         } catch (erroMemoria) {
-
             console.log(
                 "Nao foi possivel salvar a memoria:",
                 erroMemoria.message
@@ -126,7 +105,6 @@ app.post("/chat", async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "Erro no chat:",
             erro
@@ -139,16 +117,8 @@ app.post("/chat", async (req, res) => {
     }
 });
 
-
-// =========================================================
-// REALTIME
-// CRIAR CLIENT SECRET PARA O ANDROID
-// =========================================================
-
 app.post("/realtime/session", async (req, res) => {
-
     try {
-
         console.log(
             "Solicitacao de nova sessao Realtime..."
         );
@@ -160,16 +130,15 @@ app.post("/realtime/session", async (req, res) => {
 
                 headers: {
                     "Authorization":
-                        "Bearer " + process.env.OPENAI_API_KEY,
+                        "Bearer " +
+                        process.env.OPENAI_API_KEY,
 
                     "Content-Type":
                         "application/json"
                 },
 
                 body: JSON.stringify({
-
                     session: {
-
                         type: "realtime",
 
                         model: "gpt-realtime-2.1",
@@ -183,17 +152,14 @@ app.post("/realtime/session", async (req, res) => {
                             "Responda por voz de forma natural.",
 
                         audio: {
-
                             input: {
-
                                 transcription: {
-
-                                    model: "gpt-4o-transcribe"
+                                    model:
+                                        "gpt-4o-transcribe"
                                 }
                             },
 
                             output: {
-
                                 voice: "marin"
                             }
                         }
@@ -211,7 +177,6 @@ app.post("/realtime/session", async (req, res) => {
         );
 
         if (!resposta.ok) {
-
             console.error(
                 "Erro OpenAI:",
                 dados
@@ -220,7 +185,6 @@ app.post("/realtime/session", async (req, res) => {
             return res
                 .status(resposta.status)
                 .json({
-
                     erro:
                         "OpenAI recusou a sessao Realtime.",
 
@@ -232,14 +196,12 @@ app.post("/realtime/session", async (req, res) => {
         res.json(dados);
 
     } catch (erro) {
-
         console.error(
             "Erro ao criar sessao Realtime:",
             erro
         );
 
         res.status(500).json({
-
             erro:
                 "Erro ao iniciar o modo chamada.",
 
@@ -249,15 +211,8 @@ app.post("/realtime/session", async (req, res) => {
     }
 });
 
-
-// =========================================================
-// 404
-// =========================================================
-
 app.use((req, res) => {
-
     res.status(404).json({
-
         erro:
             "Rota nao encontrada",
 
@@ -266,11 +221,6 @@ app.use((req, res) => {
     });
 });
 
-
-// =========================================================
-// SERVIDOR
-// =========================================================
-
 const PORT =
     process.env.PORT || 3000;
 
@@ -278,7 +228,6 @@ app.listen(
     PORT,
     "0.0.0.0",
     () => {
-
         console.log(
             "Mano T esta rodando na porta " +
             PORT +
