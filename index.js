@@ -13,13 +13,12 @@ const openai = new OpenAI({
 apiKey: process.env.OPENAI_API_KEY
 });
 
-async function buscarClima(latitude, longitude) {
-
+async function buscarClima() {
 
 const url =
     "https://api.open-meteo.com/v1/forecast" +
-    "?latitude=" + encodeURIComponent(latitude) +
-    "&longitude=" + encodeURIComponent(longitude) +
+    "?latitude=-23.5505" +
+    "&longitude=-46.6333" +
     "&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m" +
     "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum" +
     "&forecast_days=3" +
@@ -28,40 +27,29 @@ const url =
 const resposta = await fetch(url);
 
 if (!resposta.ok) {
-    throw new Error(
-        "Nao foi possivel consultar o servico de clima."
-    );
+    throw new Error("Erro ao consultar clima.");
 }
 
 return await resposta.json();
 
-
 }
 
-async function buscarCotacao(base, moeda) {
-
+async function buscarCotacao() {
 
 const url =
-    "https://api.frankfurter.dev/v2/rate/" +
-    encodeURIComponent(base.toLowerCase()) +
-    "/" +
-    encodeURIComponent(moeda.toLowerCase());
+    "https://api.frankfurter.dev/v2/rate/usd/brl";
 
 const resposta = await fetch(url);
 
 if (!resposta.ok) {
-    throw new Error(
-        "Nao foi possivel consultar a cotacao."
-    );
+    throw new Error("Erro ao consultar cotacao.");
 }
 
 return await resposta.json();
 
-
 }
 
-function identificarFerramenta(mensagem) {
-
+function detectarFerramentas(mensagem) {
 
 const texto =
     mensagem
@@ -69,216 +57,61 @@ const texto =
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
 
-const ferramentas = [];
+return {
+    clima:
+        /tempo|clima|chuva|chover|previsao|temperatura|calor|frio|vento|umidade/.test(texto),
 
-const palavrasClima = [
-    "tempo",
-    "clima",
-    "chuva",
-    "chover",
-    "chovendo",
-    "previsao",
-    "temperatura",
-    "calor",
-    "frio",
-    "vento",
-    "umidade",
-    "trovoada",
-    "tempestade"
-];
-
-const palavrasCambio = [
-    "dolar",
-    "euro",
-    "libra",
-    "iene",
-    "cotacao",
-    "cambio",
-    "moeda",
-    "quanto vale",
-    "real"
-];
-
-if (
-    palavrasClima.some(
-        palavra => texto.includes(palavra)
-    )
-) {
-    ferramentas.push("clima");
-}
-
-if (
-    palavrasCambio.some(
-        palavra => texto.includes(palavra)
-    )
-) {
-    ferramentas.push("cotacao");
-}
-
-return ferramentas;
-
-
-}
-
-function extrairFontesWeb(resposta) {
-
-
-const fontes = [];
-
-if (!resposta || !resposta.output) {
-    return fontes;
-}
-
-for (const item of resposta.output) {
-
-    if (
-        item.type !== "web_search_call"
-    ) {
-        continue;
-    }
-
-    const sources =
-        item.action &&
-        item.action.sources;
-
-    if (!Array.isArray(sources)) {
-        continue;
-    }
-
-    for (const fonte of sources) {
-
-        fontes.push({
-            titulo:
-                fonte.title ||
-                "",
-            url:
-                fonte.url ||
-                ""
-        });
-
-    }
-}
-
-return fontes;
-
-
-}
-
-function detectarChamadasWeb(resposta) {
-
-
-const chamadas = [];
-
-if (!resposta || !resposta.output) {
-    return chamadas;
-}
-
-for (const item of resposta.output) {
-
-    if (
-        item.type === "web_search_call"
-    ) {
-
-        chamadas.push({
-            id:
-                item.id ||
-                null,
-
-            status:
-                item.status ||
-                null,
-
-            tipo:
-                item.type,
-
-            acao:
-                item.action
-                    ? item.action.type
-                    : null
-        });
-    }
-}
-
-return chamadas;
-
+    cotacao:
+        /dolar|euro|libra|iene|cotacao|cambio|moeda/.test(texto)
+};
 
 }
 
 app.get("/", (req, res) => {
 
-
 res.json({
     status: "online",
-    message: "Mano T esta vivo",
-    ferramentas: [
-        "web_search",
-        "clima",
-        "cotacao"
-    ]
+    message: "Mano T esta vivo"
 });
-
 
 });
 
 app.get("/health", (req, res) => {
 
-
 res.json({
     status: "ok",
     service: "Mano T"
 });
-```
 
 });
 
 app.post("/chat", async (req, res) => {
 
 const diagnostico = {
+    clima: {
+        tentado: false,
+        sucesso: false,
+        erro: null
+    },
 
-    mensagemRecebida:
-        req.body &&
-        req.body.mensagem
-            ? true
-            : false,
+    cotacao: {
+        tentado: false,
+        sucesso: false,
+        erro: null
+    },
 
-    ferramentaDetectada:
-        [],
-
-    clima:
-
-        {
-            tentado: false,
-            sucesso: false,
-            erro: null
-        },
-
-    cotacao:
-
-        {
-            tentado: false,
-            sucesso: false,
-            erro: null
-        },
-
-    webSearch:
-
-        {
-            solicitado: false,
-            chamadas: [],
-            fontes: []
-        }
-
+    webSearch: {
+        solicitado: true,
+        chamadas: [],
+        fontes: []
+    }
 };
 
 try {
 
-    const mensagem =
-        req.body.mensagem;
+    const mensagem = req.body.mensagem;
 
-    if (
-        !mensagem ||
-        typeof mensagem !== "string"
-    ) {
+    if (!mensagem || typeof mensagem !== "string") {
 
         return res.status(400).json({
             erro: "Mensagem nao enviada",
@@ -287,143 +120,78 @@ try {
 
     }
 
-    const ferramentasDetectadas =
-        identificarFerramenta(
-            mensagem
-        );
+    const ferramentas =
+        detectarFerramentas(mensagem);
 
-    diagnostico.ferramentaDetectada =
-        ferramentasDetectadas;
+    let contexto = "";
 
-    let contextoFerramentas = "";
+    if (ferramentas.clima) {
 
-    if (
-        ferramentasDetectadas.includes(
-            "clima"
-        )
-    ) {
-
-        diagnostico.clima.tentado =
-            true;
+        diagnostico.clima.tentado = true;
 
         try {
 
             const clima =
-                await buscarClima(
-                    -23.5505,
-                    -46.6333
-                );
+                await buscarClima();
 
-            diagnostico.clima.sucesso =
-                true;
+            diagnostico.clima.sucesso = true;
 
-            contextoFerramentas +=
-                "\n\nDADOS DE CLIMA CONSULTADOS AGORA EM SAO PAULO:\n" +
-                JSON.stringify(
-                    clima
-                );
+            contexto +=
+                "\nDADOS DE CLIMA ATUAIS:\n" +
+                JSON.stringify(clima);
 
         } catch (erro) {
 
             diagnostico.clima.erro =
-                erro.message ||
-                "Erro desconhecido";
-
-            console.error(
-                "Erro no clima:",
-                erro
-            );
+                erro.message;
 
         }
-
     }
 
-    if (
-        ferramentasDetectadas.includes(
-            "cotacao"
-        )
-    ) {
+    if (ferramentas.cotacao) {
 
-        diagnostico.cotacao.tentado =
-            true;
+        diagnostico.cotacao.tentado = true;
 
         try {
 
             const cotacao =
-                await buscarCotacao(
-                    "usd",
-                    "brl"
-                );
+                await buscarCotacao();
 
-            diagnostico.cotacao.sucesso =
-                true;
+            diagnostico.cotacao.sucesso = true;
 
-            contextoFerramentas +=
-                "\n\nDADOS DE COTACAO CONSULTADOS AGORA:\n" +
-                JSON.stringify(
-                    cotacao
-                );
+            contexto +=
+                "\nDADOS DE COTACAO ATUAIS:\n" +
+                JSON.stringify(cotacao);
 
         } catch (erro) {
 
             diagnostico.cotacao.erro =
-                erro.message ||
-                "Erro desconhecido";
-
-            console.error(
-                "Erro na cotacao:",
-                erro
-            );
+                erro.message;
 
         }
-
     }
-
-    diagnostico.webSearch.solicitado =
-        true;
 
     const resposta =
         await openai.responses.create({
 
-            model:
-                "gpt-5.6-luna",
+            model: "gpt-5.6-luna",
 
             instructions:
-
-                "Voce e o Mano T, uma IA pessoal amigavel, natural e prestativa. " +
-
+                "Voce e o Mano T. " +
                 "Responda sempre em portugues do Brasil. " +
-
                 "Seja natural, direto e parceiro. " +
-
-                "Voce possui acesso a pesquisa na internet. " +
-
-                "Quando a pergunta pedir informacao atual, noticias, clima, " +
-                "cotacoes, precos, acontecimentos recentes ou qualquer dado " +
-                "que possa ter mudado, pesquise na internet antes de responder. " +
-
-                "Quando houver dados de APIs no contexto, use esses dados " +
-                "como fonte principal. " +
-
+                "Use os dados externos fornecidos no contexto. " +
+                "Quando precisar de informacao atual, use a pesquisa na internet. " +
                 "Nunca invente informacoes atuais. " +
-
-                "Nunca diga que nao possui acesso a internet se a pesquisa " +
-                "ou uma API tiver sido executada com sucesso.",
+                "Nunca diga que nao tem acesso a internet se uma ferramenta foi executada.",
 
             tools: [
-
                 {
-                    type:
-                        "web_search",
-
-                    external_web_access:
-                        true
+                    type: "web_search"
                 }
-
             ],
 
-            tool_choice:
-                "required",
+            tool_choice: "required",
 
             include: [
                 "web_search_call.action.sources"
@@ -431,25 +199,41 @@ try {
 
             input:
                 mensagem +
-                contextoFerramentas
-
+                contexto
         });
 
-    diagnostico.webSearch.chamadas =
-        detectarChamadasWeb(
-            resposta
-        );
+    for (const item of resposta.output || []) {
 
-    diagnostico.webSearch.fontes =
-        extrairFontesWeb(
-            resposta
-        );
+        if (item.type === "web_search_call") {
+
+            diagnostico.webSearch.chamadas.push({
+                id: item.id || null,
+                status: item.status || null,
+                tipo: item.type
+            });
+
+            const sources =
+                item.action &&
+                item.action.sources;
+
+            if (Array.isArray(sources)) {
+
+                for (const fonte of sources) {
+
+                    diagnostico.webSearch.fontes.push({
+                        titulo:
+                            fonte.title || "",
+                        url:
+                            fonte.url || ""
+                    });
+
+                }
+            }
+        }
+    }
 
     console.log(
-        "========== DIAGNOSTICO MANO T =========="
-    );
-
-    console.log(
+        "DIAGNOSTICO:",
         JSON.stringify(
             diagnostico,
             null,
@@ -457,23 +241,17 @@ try {
         )
     );
 
-    console.log(
-        "========================================="
-    );
-
     res.json({
-
         resposta:
             resposta.output_text,
 
         diagnostico
-
     });
 
 } catch (erro) {
 
     console.error(
-        "Erro no chat:",
+        "ERRO NO CHAT:",
         erro
     );
 
@@ -482,35 +260,23 @@ try {
         "Erro desconhecido";
 
     res.status(500).json({
-
         erro:
-            "O Mano T teve um problema ao consultar as ferramentas.",
-
+            "Erro ao consultar as ferramentas.",
         detalhes:
-            erro.message ||
-            "Erro desconhecido",
-
+            erro.message,
         diagnostico
-
     });
-
 }
-
 
 });
 
 app.post("/tts", async (req, res) => {
 
-
 try {
 
-    const texto =
-        req.body.texto;
+    const texto = req.body.texto;
 
-    if (
-        !texto ||
-        typeof texto !== "string"
-    ) {
+    if (!texto || typeof texto !== "string") {
 
         return res.status(400).json({
             erro: "Texto nao enviado"
@@ -521,18 +287,10 @@ try {
     const audio =
         await openai.audio.speech.create({
 
-            model:
-                "gpt-4o-mini-tts",
-
-            voice:
-                "cedar",
-
-            input:
-                texto,
-
-            response_format:
-                "mp3"
-
+            model: "gpt-4o-mini-tts",
+            voice: "cedar",
+            input: texto,
+            response_format: "mp3"
         });
 
     const buffer =
@@ -550,9 +308,7 @@ try {
         buffer.length
     );
 
-    res.send(
-        buffer
-    );
+    res.send(buffer);
 
 } catch (erro) {
 
@@ -562,117 +318,81 @@ try {
     );
 
     res.status(500).json({
-
         erro:
             "Nao foi possivel gerar a voz do Mano T."
-
     });
-
 }
-
 
 });
 
-app.post(
-"/realtime/session",
-async (req, res) => {
+app.post("/realtime/session", async (req, res) => {
 
+try {
 
-    try {
+    const sessao =
+        await openai.realtime.clientSecrets.create({
 
-        const sessao =
-            await openai
-                .realtime
-                .clientSecrets
-                .create({
+            session: {
 
-                    session: {
+                type: "realtime",
 
-                        type:
-                            "realtime",
+                model: "gpt-realtime-2.1",
 
-                        model:
-                            "gpt-realtime-2.1",
+                instructions:
+                    "Voce e o Mano T, uma IA pessoal amigavel, natural e parceira. " +
+                    "Fale sempre em portugues do Brasil, com pronuncia e entonacao naturais do portugues brasileiro. " +
+                    "Nao responda em ingles ou outro idioma, a menos que o usuario peca explicitamente. " +
+                    "Mantenha uma conversa natural, descontraida e direta, como um parceiro brasileiro conversando com o usuario.",
 
-                        instructions:
+                audio: {
 
-                            "Voce e o Mano T, uma IA pessoal amigavel, natural e parceira. " +
-                            "Fale sempre em portugues do Brasil, com pronuncia e entonacao naturais " +
-                            "do portugues brasileiro. " +
-                            "Nao responda em ingles ou outro idioma, a menos que o usuario peca explicitamente. " +
-                            "Mantenha uma conversa natural, descontraida e direta, como um parceiro brasileiro " +
-                            "conversando com o usuario.",
+                    input: {
 
-                        audio: {
-
-                            input: {
-
-                                transcription: {
-
-                                    model:
-                                        "gpt-4o-mini-transcribe",
-
-                                    language:
-                                        "pt"
-
-                                }
-
-                            },
-
-                            output: {
-
-                                voice:
-                                    "cedar"
-
-                            }
-
+                        transcription: {
+                            model:
+                                "gpt-4o-mini-transcribe",
+                            language:
+                                "pt"
                         }
+                    },
 
+                    output: {
+                        voice: "cedar"
                     }
-
-                });
-
-        res.json({
-
-            value:
-                sessao.value
-
+                }
+            }
         });
 
-    } catch (erro) {
+    res.json({
+        value:
+            sessao.value
+    });
 
-        console.error(
-            "Erro ao criar sessao Realtime:",
-            erro
-        );
+} catch (erro) {
 
-        res.status(500).json({
+    console.error(
+        "Erro ao criar sessao Realtime:",
+        erro
+    );
 
-            erro:
-                "Erro ao criar sessao Realtime",
-
-            detalhes:
-                erro.message ||
-                "Erro desconhecido"
-
-        });
-
-    }
-
+    res.status(500).json({
+        erro:
+            "Erro ao criar sessao Realtime",
+        detalhes:
+            erro.message ||
+            "Erro desconhecido"
+    });
 }
 
-
-);
+});
 
 const PORT =
-process.env.PORT ||
-3000;
+process.env.PORT || 3000;
 
 app.listen(
 PORT,
 "0.0.0.0",
 () => {
-
 
     console.log(
         "Mano T esta rodando na porta " +
@@ -681,6 +401,5 @@ PORT,
     );
 
 }
-
 
 );
