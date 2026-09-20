@@ -52,10 +52,7 @@ const mensagem = req.body.mensagem;
     });
 
 } catch (erro) {
-    console.error(
-        "Erro no chat:",
-        erro
-    );
+    console.error("Erro no chat:", erro);
 
     res.status(500).json({
         erro: "O Mano T teve um problema ao pensar."
@@ -65,8 +62,7 @@ const mensagem = req.body.mensagem;
 
 });
 
-const PORT =
-process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 app.listen(
 PORT,
