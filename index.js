@@ -1,3 +1,4 @@
+```javascript
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
@@ -183,7 +184,17 @@ app.post("/realtime/session", async (req, res) => {
 
                         audio: {
 
+                            input: {
+
+                                transcription: {
+
+                                    model: "gpt-4o-transcribe"
+                                }
+
+                            },
+
                             output: {
+
                                 voice: "marin"
                             }
                         }
@@ -274,3 +285,4 @@ app.listen(
         );
     }
 );
+```
